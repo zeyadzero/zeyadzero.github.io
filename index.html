@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-theme="green">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zeyad Hossam | DevOps · Cloud · Backend</title>
+  <meta name="description" content="Portfolio of Zeyad Hossam: DevOps, Cloud and Backend engineer. Automation, CI/CD, infrastructure and Linux tooling.">
+  <meta name="theme-color" content="#070b10">
+  <meta property="og:title" content="Zeyad Hossam | DevOps · Cloud · Backend">
+  <meta property="og:description" content="Automation, CI/CD, infrastructure and Linux tooling. Try the interactive terminal.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="booting">
+  <a class="skip" href="#main">Skip to content</a>
+
+  <div id="boot" aria-hidden="true">
+    <pre id="bootlog"></pre>
+    <div class="bootskip">press any key to skip</div>
+  </div>
+
+  <canvas id="net" aria-hidden="true"></canvas>
+
+  <header class="nav" id="nav">
+    <a class="brand" href="#home" aria-label="Home"><span class="brand-ps" id="brandPs">zeyad@devops</span><span class="brand-sym">:~$</span></a>
+    <nav aria-label="Sections">
+      <a href="#about">about</a>
+      <a href="#skills">skills</a>
+      <a href="#projects">projects</a>
+      <a href="#log">log</a>
+      <a href="#terminal">terminal</a>
+      <a href="#contact">contact</a>
+    </nav>
+    <button class="icon-btn" id="themeBtn" type="button" title="Change theme" aria-label="Change theme"><span class="swatch"></span><span id="themeName">green</span></button>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="home">
+      <div class="hero-text">
+        <p class="eyebrow" id="availability"><span class="dot"></span><span id="availText"></span></p>
+        <h1 id="name" class="glitch" data-text="">&nbsp;</h1>
+        <p class="role"><span class="role-prefix">&gt;</span> <span id="role"></span><span class="caret"></span></p>
+        <p class="tagline" id="tagline"></p>
+        <div class="cta">
+          <a class="btn primary" href="#projects">View projects</a>
+          <a class="btn" href="#terminal">Open terminal</a>
+          <a class="btn ghost" id="mailBtn" href="#contact">Contact</a>
+        </div>
+      </div>
+      <aside class="status" aria-label="Live system status">
+        <div class="panel-title"><span class="dot"></span> live system</div>
+        <dl id="statusList"></dl>
+      </aside>
+    </section>
+
+    <section id="about" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ cat</span> about.md</h2>
+      <div class="about-grid">
+        <div class="about-text" id="aboutText"></div>
+        <div class="neo" aria-label="System facts">
+          <pre class="neo-logo" aria-hidden="true">   ___
+  |_  /
+   / /
+  /___|</pre>
+          <dl id="facts"></dl>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ kubectl get</span> skills -A</h2>
+      <div class="filters" role="group" aria-label="Filter skills">
+        <button type="button" class="chip on" data-f="all">all</button>
+        <button type="button" class="chip" data-f="running">running</button>
+        <button type="button" class="chip" data-f="learning">learning</button>
+      </div>
+      <div class="skill-grid" id="skillGrid"></div>
+    </section>
+
+    <section id="projects" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ docker</span> ps --all</h2>
+      <div class="project-grid" id="projectGrid"></div>
+    </section>
+
+    <section id="log" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ git log</span> --graph --oneline</h2>
+      <ol class="gitlog" id="gitlog"></ol>
+    </section>
+
+    <section id="terminal" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ ssh</span> guest@portfolio</h2>
+      <p class="hint">A real, interactive terminal. Type <kbd>help</kbd>, press <kbd>Tab</kbd> to complete, <kbd>↑</kbd> for history. Press <kbd>`</kbd> anywhere to jump here.</p>
+      <div class="term" id="term">
+        <div class="term-bar"><i></i><i></i><i></i><span id="termTitle">guest@portfolio: ~</span></div>
+        <div class="term-body" id="termBody">
+          <div id="termOut" aria-live="polite"></div>
+          <label class="term-line"><span class="ps1" id="ps1">guest@portfolio:~$</span>
+            <input id="termIn" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Terminal command">
+          </label>
+        </div>
+      </div>
+      <div class="quick" id="quick" aria-label="Quick commands"></div>
+    </section>
+
+    <section id="contact" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ ./</span>contact.sh</h2>
+      <div class="contact-card">
+        <p class="contact-lead">Have a pipeline to fix, a service to ship or an idea to automate? Let's talk.</p>
+        <div class="contact-actions" id="contactActions"></div>
+        <p class="copied" id="copied" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <svg class="pulse" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
+      <path class="pulse-bg" d="M0 32 H120 L132 22 L142 32 H170 L182 6 L196 54 L208 32 H320 L332 22 L342 32 H370 L382 6 L396 54 L408 32 H600"/>
+      <path class="pulse-fg" pathLength="1000" d="M0 32 H120 L132 22 L142 32 H170 L182 6 L196 54 L208 32 H320 L332 22 L342 32 H370 L382 6 L396 54 L408 32 H600"/>
+    </svg>
+    <p><span id="year"></span> · Developed by <strong>Zeyad Hossam</strong> · <span class="dim">status: operational</span></p>
+  </footer>
+
+  <canvas id="matrix" aria-hidden="true"></canvas>
+
+  <noscript>
+    <p class="noscript">This portfolio is built with JavaScript. Zeyad Hossam: DevOps, Cloud and Backend engineer. Please enable JavaScript or visit the GitHub profile.</p>
+  </noscript>
+
+  <script src="data.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
