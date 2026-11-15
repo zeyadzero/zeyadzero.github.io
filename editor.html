@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Portfolio editor</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root { --bg:#0b0f14; --panel:#131a22; --panel2:#18212b; --line:#2a3644; --text:#e6edf3; --dim:#8b949e; --acc:#3fb950; --blue:#58a6ff; --warn:#d29922; --danger:#ff7b72;
+      --mono:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; --sans:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; }
+    * { box-sizing:border-box; }
+    html,body { height:100%; margin:0; }
+    body { background:var(--bg); color:var(--text); font:14px/1.5 var(--sans); display:flex; flex-direction:column; }
+    a { color:var(--blue); }
+    .top { display:flex; align-items:center; gap:10px; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); flex-wrap:wrap; }
+    .top strong { font:700 15px var(--mono); }
+    .muted { color:var(--dim); font-size:12px; } .spacer { flex:1; }
+    button, .btn { font:600 13px var(--sans); color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:7px 13px; cursor:pointer; text-decoration:none; }
+    button:hover, .btn:hover { border-color:var(--acc); }
+    button.primary { background:var(--acc); color:#04110a; border-color:var(--acc); }
+    button.danger:hover { border-color:var(--danger); color:var(--danger); }
+    button.mini { padding:2px 9px; font-size:12px; }
+    #banner { background:#2d2208; border-bottom:1px solid var(--warn); padding:8px 16px; display:flex; gap:10px; align-items:center; }
+    .app { flex:1; min-height:0; display:grid; grid-template-columns:190px minmax(380px,1fr) minmax(340px,46%); }
+    #side { background:var(--panel); border-right:1px solid var(--line); overflow:auto; padding:10px; }
+    #side button { display:flex; width:100%; justify-content:space-between; align-items:center; margin-bottom:6px; text-align:left; }
+    #side button.on { border-color:var(--acc); background:#10261a; color:var(--acc); }
+    #side .n { font:11px var(--mono); color:var(--dim); }
+    #form { overflow:auto; padding:18px 22px 60px; }
+    .preview { border-left:1px solid var(--line); display:flex; flex-direction:column; min-height:0; background:#06090d; }
+    .pv-head { padding:8px 14px; font:12px var(--mono); color:var(--dim); border-bottom:1px solid var(--line); display:flex; justify-content:space-between; }
+    #pv { flex:1; border:0; width:100%; background:#070b10; }
+    h2 { margin:0 0 4px; font:700 20px var(--sans); } .lead { color:var(--dim); margin:0 0 18px; }
+    .help { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:18px; color:#c9d1d9; }
+    .help summary { cursor:pointer; font-weight:600; } .help ol { margin:8px 0 2px 18px; padding:0; } .help li { margin:3px 0; }
+    .row { margin:0 0 14px; } .row > label { display:block; font:600 12px var(--mono); color:var(--blue); margin-bottom:4px; }
+    .row small { display:block; color:var(--dim); margin-top:3px; font-size:12px; }
+    input[type=text], textarea, select { width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:14px var(--sans); }
+    textarea { resize:vertical; min-height:60px; font-family:var(--sans); }
+    input:focus, textarea:focus, select:focus { outline:2px solid var(--acc); outline-offset:0; border-color:var(--acc); }
+    .check { display:flex; gap:8px; align-items:center; } .check input { width:auto; }
+    .item { background:var(--panel); border:1px solid var(--line); border-radius:10px; margin-bottom:10px; }
+    .item > summary { list-style:none; display:flex; align-items:center; gap:8px; padding:9px 12px; cursor:pointer; }
+    .item > summary::-webkit-details-marker { display:none; }
+    .item > summary::before { content:"▸"; color:var(--dim); } .item[open] > summary::before { content:"▾"; }
+    .item .t { flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .item .t.empty { color:var(--dim); font-style:italic; }
+    .item-body { padding:6px 14px 6px; border-top:1px solid var(--line); background:var(--panel2); border-radius:0 0 10px 10px; }
+    .item-body .item { background:var(--panel); }
+    .pair { display:grid; grid-template-columns:1fr 2fr auto; gap:8px; margin-bottom:6px; }
+    .imgrow { display:flex; gap:8px; align-items:center; } .imgrow input[type=text] { flex:1; }
+    .thumb { width:46px; height:46px; object-fit:cover; border-radius:6px; border:1px solid var(--line); background:#000; flex:none; }
+    .thumb[hidden] { display:none; }
+    .picked { color:var(--warn); }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .chip { display:inline-flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:2px 8px; font:12px var(--mono); }
+    .chip svg { width:14px; height:14px; } .chip.no { color:var(--dim); border-style:dashed; }
+    .picker { margin-top:8px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px; }
+    .picker .chips { max-height:190px; overflow:auto; } .picker button.chip { cursor:pointer; color:var(--text); } .picker button.chip:hover { border-color:var(--acc); }
+    .multi { display:flex; flex-wrap:wrap; gap:6px 14px; }
+    .warn { color:var(--warn); font-size:12px; margin:4px 0; }
+    .actions { display:flex; gap:6px; }
+    @media (max-width: 1100px) { .app { grid-template-columns:150px 1fr; } .preview { display:none; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <strong>✏️ Portfolio editor</strong>
+    <span class="muted" id="saved">Draft is saved in this browser automatically</span>
+    <span class="spacer"></span>
+    <button id="btnSamples" type="button" title="Delete every item marked as a SAMPLE">🧹 Remove sample items</button>
+    <button id="btnCopy" type="button">Copy data.js</button>
+    <button id="btnJs" type="button" class="primary">⬇ data.js</button>
+    <button id="btnZip" type="button" class="primary" title="data.js + the images/PDFs you picked, in the right folders">⬇ Update pack (ZIP)</button>
+    <a class="btn" href="index.html" target="_blank" rel="noopener">Open site ↗</a>
+  </header>
+  <div id="banner" hidden><span>You have an unsaved draft from earlier.</span><button id="btnRestore" type="button" class="primary mini">Restore it</button><button id="btnDiscard" type="button" class="mini">Discard</button></div>
+  <div class="app">
+    <nav id="side" aria-label="Sections"></nav>
+    <main id="form"></main>
+    <aside class="preview"><div class="pv-head"><span>Live preview</span><span id="pvStatus">loading...</span></div>
+      <iframe id="pv" src="index.html?preview=1" title="Live preview of your portfolio"></iframe></aside>
+  </div>
+  <script src="data.js"></script>
+  <script src="assets/icons.js"></script>
+  <script src="assets/editor.js"></script>
+</body>
+</html>

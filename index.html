@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zeyad Hossam | DevOps · Cloud · Backend</title>
-  <meta name="description" content="Portfolio of Zeyad Hossam: DevOps, Cloud and Backend engineer. Automation, CI/CD, infrastructure and Linux tooling.">
+  <meta name="description" content="Portfolio of Zeyad Hossam: DevOps, Cloud and Backend engineer. Projects, courses, certificates, CVs and an interactive terminal.">
   <meta name="theme-color" content="#070b10">
   <meta property="og:title" content="Zeyad Hossam | DevOps · Cloud · Backend">
   <meta property="og:description" content="Automation, CI/CD, infrastructure and Linux tooling. Try the interactive terminal.">
@@ -24,13 +24,19 @@
 
   <header class="nav" id="nav">
     <a class="brand" href="#home" aria-label="Home"><span class="brand-ps" id="brandPs">zeyad@devops</span><span class="brand-sym">:~$</span></a>
-    <nav aria-label="Sections">
-      <a href="#about">about</a>
-      <a href="#skills">skills</a>
-      <a href="#projects">projects</a>
-      <a href="#log">log</a>
-      <a href="#terminal">terminal</a>
-      <a href="#contact">contact</a>
+    <nav aria-label="Sections" id="navLinks">
+      <a href="#about" data-sec="about">about</a>
+      <a href="#experience" data-sec="experience">experience</a>
+      <a href="#skills" data-sec="skills">skills</a>
+      <a href="#projects" data-sec="projects">projects</a>
+      <a href="#learning" data-sec="learning">learning</a>
+      <a href="#certificates" data-sec="certificates">certs</a>
+      <a href="#cv" data-sec="cv">cv</a>
+      <a href="#volunteering" data-sec="volunteering">volunteer</a>
+      <a href="#gallery" data-sec="gallery">gallery</a>
+      <a href="#log" data-sec="log">log</a>
+      <a href="#terminal" data-sec="terminal">terminal</a>
+      <a href="#contact" data-sec="contact">contact</a>
     </nav>
     <button class="icon-btn" id="themeBtn" type="button" title="Change theme" aria-label="Change theme"><span class="swatch"></span><span id="themeName">green</span></button>
   </header>
@@ -44,13 +50,24 @@
         <p class="tagline" id="tagline"></p>
         <div class="cta">
           <a class="btn primary" href="#projects">View projects</a>
+          <a class="btn" id="cvBtn" href="#cv">Get my CV</a>
           <a class="btn" href="#terminal">Open terminal</a>
           <a class="btn ghost" id="mailBtn" href="#contact">Contact</a>
         </div>
       </div>
-      <aside class="status" aria-label="Live system status">
-        <div class="panel-title"><span class="dot"></span> live system</div>
-        <dl id="statusList"></dl>
+      <aside class="hero-side" aria-label="Profile">
+        <figure class="photo" id="photo">
+          <span class="ring" aria-hidden="true"></span>
+          <div class="photo-in">
+            <img id="photoImg" alt="" hidden>
+            <span class="avatar" id="avatar" aria-hidden="true">Z</span>
+            <span class="scan" aria-hidden="true"></span>
+          </div>
+        </figure>
+        <div class="status" aria-label="Live system status">
+          <div class="panel-title"><span class="dot"></span> live system</div>
+          <dl id="statusList"></dl>
+        </div>
       </aside>
     </section>
 
@@ -59,28 +76,57 @@
       <div class="about-grid">
         <div class="about-text" id="aboutText"></div>
         <div class="neo" aria-label="System facts">
-          <pre class="neo-logo" aria-hidden="true">   ___
-  |_  /
-   / /
-  /___|</pre>
+          <pre class="neo-logo" aria-hidden="true"></pre>
           <dl id="facts"></dl>
         </div>
       </div>
     </section>
 
+    <section id="experience" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ journalctl</span> --unit=career</h2>
+      <ol class="exp" id="expList"></ol>
+    </section>
+
     <section id="skills" class="reveal">
       <h2 class="sec-title"><span class="cmd">$ kubectl get</span> skills -A</h2>
-      <div class="filters" role="group" aria-label="Filter skills">
-        <button type="button" class="chip on" data-f="all">all</button>
-        <button type="button" class="chip" data-f="running">running</button>
-        <button type="button" class="chip" data-f="learning">learning</button>
-      </div>
+      <div class="filters" id="skillFilters" role="group" aria-label="Filter skills"></div>
       <div class="skill-grid" id="skillGrid"></div>
     </section>
 
     <section id="projects" class="reveal">
       <h2 class="sec-title"><span class="cmd">$ docker</span> ps --all</h2>
+      <div class="filters" id="projectFilters" role="group" aria-label="Filter projects by category"></div>
       <div class="project-grid" id="projectGrid"></div>
+    </section>
+
+    <section id="learning" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ ls</span> courses/ trainings/</h2>
+      <div class="filters" id="courseFilters" role="group" aria-label="Filter courses"></div>
+      <div class="course-list" id="courseList"></div>
+      <div class="library" id="library"></div>
+    </section>
+
+    <section id="certificates" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ gpg</span> --verify certificates/</h2>
+      <div class="cert-grid" id="certGrid"></div>
+      <div class="credly" id="credly"></div>
+    </section>
+
+    <section id="cv" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ less</span> cv.pdf</h2>
+      <div class="cv-tabs" id="cvTabs" role="tablist" aria-label="CV versions"></div>
+      <div class="cv-view" id="cvView"></div>
+    </section>
+
+    <section id="volunteering" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ ls</span> volunteering/ talks/</h2>
+      <div class="project-grid" id="volGrid"></div>
+    </section>
+
+    <section id="gallery" class="reveal">
+      <h2 class="sec-title"><span class="cmd">$ ls</span> gallery/</h2>
+      <div class="filters" id="galleryFilters" role="group" aria-label="Filter photos"></div>
+      <div class="gallery" id="galleryGrid"></div>
     </section>
 
     <section id="log" class="reveal">
@@ -90,17 +136,26 @@
 
     <section id="terminal" class="reveal">
       <h2 class="sec-title"><span class="cmd">$ ssh</span> guest@portfolio</h2>
-      <p class="hint">A real, interactive terminal. Type <kbd>help</kbd>, press <kbd>Tab</kbd> to complete, <kbd>↑</kbd> for history. Press <kbd>`</kbd> anywhere to jump here.</p>
-      <div class="term" id="term">
-        <div class="term-bar"><i></i><i></i><i></i><span id="termTitle">guest@portfolio: ~</span></div>
-        <div class="term-body" id="termBody">
-          <div id="termOut" aria-live="polite"></div>
-          <label class="term-line"><span class="ps1" id="ps1">guest@portfolio:~$</span>
-            <input id="termIn" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Terminal command">
-          </label>
+      <p class="hint">Don't know what to type? Click a button: it types the command for you and the information appears as code on the right.</p>
+      <div class="guide" aria-label="Quick commands">
+        <div class="guide-btns" id="guideBtns"></div>
+      </div>
+      <div class="term-grid">
+        <div class="term" id="term">
+          <div class="term-bar"><i></i><i></i><i></i><span id="termTitle">guest@portfolio: ~</span></div>
+          <div class="term-body" id="termBody">
+            <div id="termOut" aria-live="polite"></div>
+            <label class="term-line"><span class="ps1" id="ps1">guest@portfolio:~$</span>
+              <input id="termIn" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Terminal command">
+            </label>
+          </div>
+        </div>
+        <div class="term codeview" id="codeView">
+          <div class="term-bar"><i></i><i></i><i></i><span id="codeTitle">portfolio.yaml</span><span class="live" id="codeLive" hidden><span class="dot"></span> auto tour</span></div>
+          <pre class="code-body" id="codeBody" tabindex="0" aria-label="Information shown as code"></pre>
         </div>
       </div>
-      <div class="quick" id="quick" aria-label="Quick commands"></div>
+      <p class="hint small">Real terminal on the left: type <kbd>help</kbd>, <kbd>Tab</kbd> completes, <kbd>↑</kbd> history, <kbd>`</kbd> jumps here from anywhere.</p>
     </section>
 
     <section id="contact" class="reveal">
@@ -121,6 +176,17 @@
     <p><span id="year"></span> · Developed by <strong>Zeyad Hossam</strong> · <span class="dim">status: operational</span></p>
   </footer>
 
+  <div class="lb" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Viewer">
+    <button class="lb-close" id="lbClose" type="button" aria-label="Close">&times;</button>
+    <button class="lb-nav prev" id="lbPrev" type="button" aria-label="Previous">&#8249;</button>
+    <figure class="lb-fig" id="lbFig">
+      <div class="lb-stage" id="lbStage"><img id="lbImg" alt="" hidden><iframe id="lbPdf" title="Document" hidden></iframe></div>
+      <figcaption id="lbCap"></figcaption>
+    </figure>
+    <button class="lb-nav next" id="lbNext" type="button" aria-label="Next">&#8250;</button>
+    <div class="lb-count" id="lbCount"></div>
+  </div>
+
   <canvas id="matrix" aria-hidden="true"></canvas>
 
   <noscript>
@@ -128,6 +194,7 @@
   </noscript>
 
   <script src="data.js"></script>
+  <script src="assets/icons.js"></script>
   <script src="assets/app.js"></script>
 </body>
 </html>
