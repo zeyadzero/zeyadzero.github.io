@@ -19,8 +19,20 @@
     return n;
   };
   const safeUrl = (u) => (/^(https?:|mailto:)/i.test(u || '') ? u : null);
-  const safeFile = (u) => ((/^(?:\.?\/)?assets\/[^\s"'<>\\]+$/i.test(u || '') || /^https:\/\/[^\s"'<>]+$/i.test(u || '') ||
-    (PREVIEW && /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,[A-Za-z0-9+\/=]+$/.test(u || ''))) ? u : null);
+  const safeFile = (u) => {
+    if (typeof u !== 'string' || !u || /[\s"'<>\\]/.test(u)) return null;
+    const local = /^(?:\.?\/)?assets\//i.test(u);
+    let safeLocal = false;
+    if (local) {
+      try {
+        const path = decodeURIComponent(u.split(/[?#]/)[0]).replace(/^\.\//, '');
+        safeLocal = path.startsWith('assets/') && path.split('/').every((part) => part && part !== '.' && part !== '..');
+      } catch (e) { safeLocal = false; }
+    }
+    return (safeLocal || /^https:\/\/[^\s"'<>]+$/i.test(u) ||
+      (PREVIEW && /^blob:https?:\/\/[^/]+\/[0-9a-f-]+$/i.test(u)) ||
+      (PREVIEW && /^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,[A-Za-z0-9+\/=]+$/.test(u))) ? u : null;
+  };
   const ext = (u) => ((u || '').split('?')[0].split('#')[0].split('.').pop() || '').toLowerCase();
   const baseName = (u) => decodeURIComponent((u || '').split('?')[0].split('/').pop() || 'file');
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -57,6 +69,8 @@
     if (THEMES.indexOf(name) < 0) name = 'green';
     document.documentElement.setAttribute('data-theme', name);
     $('#themeName').textContent = name;
+    const mobileThemeSwatch = $('#themeBtnMobile .swatch');
+    if (mobileThemeSwatch) mobileThemeSwatch.setAttribute('aria-label', name + ' theme');
     store.set('theme', name);
     accentRGB = hexToRgb(cssVar('--accent'));
     return name;
@@ -101,6 +115,8 @@
     if (s) s.hidden = !on;
     const a = $('#navLinks a[data-sec="' + id + '"]');
     if (a) a.hidden = !on;
+    const copy = $('#mobileMenu a[data-sec="' + id + '"]');
+    if (copy) copy.hidden = !on;
   }
   function buildFilters(box, options, onPick) {
     box.textContent = '';
@@ -322,6 +338,7 @@
     $('#ps1').textContent = 'guest@portfolio:~$';
     if (P.availability) { $('#availText').textContent = P.availability; $('#availability').hidden = false; } else { $('#availability').hidden = true; }
     $('#mailBtn').href = email ? 'mailto:' + email : '#contact';
+    $('#mailBtn').hidden = !email && !linkEntries.length;
     $('#cvBtn').hidden = !arr(P.cvs).some((c) => safeFile(c.file));
 
     const roles = arr(P.roles).length ? P.roles : ['Engineer'];
@@ -358,6 +375,7 @@
       const dds = rows.map(([k]) => { dl.appendChild(el('dt', null, k)); const dd = el('dd'); dl.appendChild(dd); return dd; });
       const update = () => rows.forEach((r, i) => { dds[i].textContent = r[1](); });
       update();
+      window.addEventListener('resize', update, { passive: true });
       setInterval(update, 1000);
     }
   }
@@ -639,12 +657,17 @@
       const dl = el('a', 'btn small primary', '⬇ Download'); dl.href = file; dl.setAttribute('download', baseName(file)); dl.id = 'cvDownload';
       const op = el('a', 'btn small', 'Open ↗'); op.href = file; op.target = '_blank'; op.rel = 'noopener noreferrer';
       const fs = el('button', 'btn small', '⤢ Full screen'); fs.type = 'button'; fs.id = 'cvFull';
-      fs.addEventListener('click', () => openLightbox([mediaItem(file, c.label)], 0, fs));
+      fs.addEventListener('click', () => {
+        const pages = $('.pdf-pages', view);
+        if (pages && pages.requestFullscreen) pages.requestFullscreen().catch(() => openLightbox([mediaItem(file, c.label)], 0, fs));
+        else openLightbox([mediaItem(file, c.label)], 0, fs);
+      });
       bar.appendChild(dl); bar.appendChild(op); bar.appendChild(fs);
       view.appendChild(bar);
       const frame = el('div', 'cv-frame');
       if (pdf) {
-        const f = el('iframe'); f.title = c.label; f.loading = 'lazy'; f.src = file + '#view=FitH'; frame.appendChild(f);
+        frame.classList.add('pdf-pages');
+        renderPdfPages(file, frame, c.label);
       } else {
         const im = el('img'); im.alt = c.label; im.src = file; frame.appendChild(im);
         frame.style.cursor = 'zoom-in'; im.addEventListener('click', () => openLightbox([mediaItem(file, c.label)], 0, im));
@@ -657,6 +680,48 @@
       b.addEventListener('click', () => show(i)); tabs.appendChild(b);
     });
     show(0);
+  }
+
+  let pdfjsPromise;
+  function loadPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (!pdfjsPromise) pdfjsPromise = new Promise((resolve, reject) => {
+      const s = el('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; s.onload = () => {
+        if (!window.pdfjsLib) { reject(new Error('PDF renderer unavailable')); return; }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      }; s.onerror = () => reject(new Error('PDF renderer could not load'));
+      document.head.appendChild(s);
+    });
+    return pdfjsPromise;
+  }
+  async function renderPdfPages(file, frame, label) {
+    frame.setAttribute('aria-label', label + ' preview');
+    const status = el('p', 'pdf-status', 'Loading PDF preview…'); frame.appendChild(status);
+    try {
+      const pdfjs = await loadPdfJs();
+      const doc = await pdfjs.getDocument(file).promise;
+      status.remove();
+      for (let pageNo = 1; pageNo <= doc.numPages; pageNo++) {
+        const page = await doc.getPage(pageNo);
+        const base = page.getViewport({ scale: 1 });
+        const frameStyle = getComputedStyle(frame);
+        const sidePadding = (parseFloat(frameStyle.paddingLeft) || 0) + (parseFloat(frameStyle.paddingRight) || 0);
+        const availableWidth = Math.max(0, frame.clientWidth - sidePadding) || 700;
+        const scale = Math.min(availableWidth / base.width, 2);
+        const viewport = page.getViewport({ scale });
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        const canvas = el('canvas', 'pdf-page');
+        canvas.width = Math.ceil(viewport.width * pixelRatio); canvas.height = Math.ceil(viewport.height * pixelRatio);
+        canvas.style.width = Math.ceil(viewport.width) + 'px';
+        canvas.setAttribute('aria-label', 'Page ' + pageNo);
+        frame.appendChild(canvas);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport, transform: pixelRatio === 1 ? null : [pixelRatio, 0, 0, pixelRatio, 0, 0] }).promise;
+      }
+    } catch (e) {
+      status.textContent = 'Preview unavailable here. Use Open or Download to view this PDF.';
+      const f = el('iframe'); f.title = label; f.src = file + '#view=FitH'; frame.appendChild(f);
+    }
   }
 
   let galleryTag = 'all';
@@ -703,6 +768,7 @@
   const LINK_ICON = { github: 'github', linkedin: 'linkedin', twitter: 'x', x: 'x', youtube: 'youtube', credly: 'credly', facebook: 'facebook', telegram: 'telegram', whatsapp: 'whatsapp' };
   function contact() {
     const box = $('#contactActions'); box.textContent = '';
+    setVisible('contact', !!email || linkEntries.length > 0);
     if (email) {
       const a = el('a', 'btn primary', 'Email me'); a.href = 'mailto:' + email; box.appendChild(a);
       const cp = el('button', 'btn', 'Copy email'); cp.type = 'button';
@@ -728,9 +794,28 @@
       sections.forEach((s) => io.observe(s));
     }
     if (!('IntersectionObserver' in window)) return;
-    const navLinks = $$('#navLinks a');
+    const navLinks = $$('#navLinks a[data-sec]');
     const spy = new IntersectionObserver((entries) => entries.forEach((e) => {
-      if (e.isIntersecting) navLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+      if (e.isIntersecting) {
+        navLinks.forEach((a) => {
+          const active = a.getAttribute('href') === '#' + e.target.id;
+          a.classList.toggle('active', active);
+          if (active) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        });
+        $$('#mobileMenu a[data-sec]').forEach((a) => {
+          const active = a.dataset.sec === e.target.id;
+          a.classList.toggle('active', active);
+          if (active) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        });
+        const currentLink = $('#mobileCurrent');
+        const sectionLink = navLinks.find((a) => a.dataset.sec === e.target.id);
+        if (currentLink) {
+          currentLink.href = '#' + e.target.id;
+          currentLink.textContent = sectionLink ? sectionLink.textContent : 'home';
+          currentLink.setAttribute('aria-label', 'Current section: ' + currentLink.textContent);
+          currentLink.setAttribute('aria-current', 'location');
+        }
+      }
     }), { rootMargin: '-45% 0px -50% 0px' });
     $$('main section[id]').forEach((s) => spy.observe(s));
   }
@@ -1033,6 +1118,7 @@
       codeTitle.textContent = spec.file;
       setActive(name);
       codeBody.textContent = '';
+      codeBody.scrollTop = 0;
       const spans = [];
       spec.lines().forEach((tokens) => {
         const row = el('div', 'cl');
@@ -1054,7 +1140,11 @@
           if (ci >= t.length) { si++; ci = 0; }
         }
         if (row) row.appendChild(caret);
-        codeBody.scrollTop = codeBody.scrollHeight;
+        if (row) {
+          const rowBox = row.getBoundingClientRect(), viewBox = codeBody.getBoundingClientRect();
+          if (rowBox.bottom > viewBox.bottom - 8) codeBody.scrollTop += rowBox.bottom - viewBox.bottom + 8;
+          else if (rowBox.top < viewBox.top + 8) codeBody.scrollTop -= viewBox.top + 8 - rowBox.top;
+        }
         await sleep(16);
       }
       return id === codeId;
@@ -1174,7 +1264,8 @@
     const GUIDE_ALL = [['About', 'about'], ['Experience', 'experience'], ['Skills', 'skills'], ['Projects', 'projects'],
       ['Courses', 'courses'], ['Certificates', 'certs'], ['CV', 'cv'], ['Volunteering', 'volunteer'], ['Timeline', 'timeline'], ['Contact', 'contact']];
     const available = (cmd) => ({ experience: arr(P.experience).length, projects: arr(P.projects).length, courses: arr(P.courses).length,
-      certs: arr(P.certificates).length, cv: arr(P.cvs).length, volunteer: arr(P.volunteering).length, timeline: arr(P.timeline).length, skills: arr(P.skills).length }[cmd] !== 0);
+      certs: arr(P.certificates).length, cv: arr(P.cvs).length, volunteer: arr(P.volunteering).length, timeline: arr(P.timeline).length,
+      skills: arr(P.skills).length, contact: email || linkEntries.length ? 1 : 0 }[cmd] !== 0);
 
     let demoId = 0, tourId = 0, demoTyping = false, inView = false, touring = false;
     function setTour(on) {
@@ -1192,7 +1283,7 @@
       if (!reduce) {
         for (const ch of cmd) {
           if (id !== demoId) { demoTyping = false; return false; }
-          input.value += ch; await sleep(55);
+          input.value += ch; await sleep(80);
         }
         await sleep(160);
       }
@@ -1211,7 +1302,7 @@
         if (id !== tourId) return;
         const done = await demo(s, true);
         if (id !== tourId || done === false) return;
-        await sleep(2200);
+        await sleep(3600);
       }
       if (id === tourId) setTour(false);
     }
@@ -1284,7 +1375,16 @@
   }
   function start() {
     applyTheme(store.get('theme') || 'green');
-    $('#themeBtn').addEventListener('click', () => applyTheme(THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.length]));
+    const toggleTheme = () => applyTheme(THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.length]);
+    $('#themeBtn').addEventListener('click', toggleTheme);
+    $('#themeBtnMobile').addEventListener('click', toggleTheme);
+    const menu = $('#mobileMenu'), more = $('#mobileMore');
+    $$('#navLinks a[data-sec]').forEach((a) => {
+      const copy = a.cloneNode(true); copy.addEventListener('click', () => { menu.hidden = true; more.setAttribute('aria-expanded', 'false'); more.focus({ preventScroll: true }); }); menu.appendChild(copy);
+    });
+    more.addEventListener('click', () => { menu.hidden = !menu.hidden; more.setAttribute('aria-expanded', String(!menu.hidden)); if (!menu.hidden) (menu.querySelector('a:not([hidden])') || menu).focus(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { menu.hidden = true; more.setAttribute('aria-expanded', 'false'); more.focus({ preventScroll: true }); } });
+    document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target) && !more.contains(e.target)) { menu.hidden = true; more.setAttribute('aria-expanded', 'false'); } });
     $('#year').textContent = new Date().getFullYear();
     derive();
     bindLightbox();

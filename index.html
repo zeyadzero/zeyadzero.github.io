@@ -2,7 +2,7 @@
 <html lang="en" data-theme="green">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Zeyad Hossam | DevOps · Cloud · Backend</title>
   <meta name="description" content="Portfolio of Zeyad Hossam: DevOps, Cloud and Backend engineer. Projects, courses, certificates, CVs and an interactive terminal.">
   <meta name="theme-color" content="#070b10">
@@ -10,7 +10,7 @@
   <meta property="og:description" content="Automation, CI/CD, infrastructure and Linux tooling. Try the interactive terminal.">
   <meta property="og:type" content="website">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=20261119">
 </head>
 <body class="booting">
   <a class="skip" href="#main">Skip to content</a>
@@ -25,6 +25,8 @@
   <header class="nav" id="nav">
     <a class="brand" href="#home" aria-label="Home"><span class="brand-ps" id="brandPs">zeyad@devops</span><span class="brand-sym">:~$</span></a>
     <nav aria-label="Sections" id="navLinks">
+      <a class="mobile-home" href="#home" aria-label="Home">home</a>
+      <a class="mobile-current" id="mobileCurrent" href="#about">about</a>
       <a href="#about" data-sec="about">about</a>
       <a href="#experience" data-sec="experience">experience</a>
       <a href="#skills" data-sec="skills">skills</a>
@@ -37,9 +39,12 @@
       <a href="#log" data-sec="log">log</a>
       <a href="#terminal" data-sec="terminal">terminal</a>
       <a href="#contact" data-sec="contact">contact</a>
+      <button class="mobile-theme" id="themeBtnMobile" type="button" title="Change theme" aria-label="Change theme"><span class="swatch"></span></button>
+      <button class="mobile-more" id="mobileMore" type="button" aria-expanded="false" aria-controls="mobileMenu">☰ <span>sections</span></button>
     </nav>
     <button class="icon-btn" id="themeBtn" type="button" title="Change theme" aria-label="Change theme"><span class="swatch"></span><span id="themeName">green</span></button>
   </header>
+  <nav class="mobile-menu" id="mobileMenu" aria-label="All sections" hidden></nav>
 
   <main id="main">
     <section class="hero" id="home">
@@ -193,8 +198,8 @@
     <p class="noscript">This portfolio is built with JavaScript. Zeyad Hossam: DevOps, Cloud and Backend engineer. Please enable JavaScript or visit the GitHub profile.</p>
   </noscript>
 
-  <script src="data.js"></script>
+  <script src="data.js?v=20261119"></script>
   <script src="assets/icons.js"></script>
-  <script src="assets/app.js"></script>
+  <script src="assets/app.js?v=20261119"></script>
 </body>
 </html>

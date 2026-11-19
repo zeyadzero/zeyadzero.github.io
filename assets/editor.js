@@ -1,6 +1,6 @@
-/* Portfolio editor. Runs entirely in your browser (no server, no upload).
-   It edits a copy of window.PROFILE, shows a live preview, and exports a new data.js
-   (plus a ZIP containing the images/PDFs you picked, already in the right folders). */
+/* Portfolio editor. Runs in your browser without uploading content.
+   It edits a copy of window.PROFILE, shows a live preview, and exports data.js or a
+   complete site ZIP with the site code, local assets, and files picked in the editor. */
 (() => {
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
@@ -103,9 +103,13 @@
   const pv = $('#pv');
   function previewData() {
     const d = clone(data);
+    const previewPath = (value) => {
+      const file = picked[value];
+      return file && (file.dataUrl || file.previewUrl) || null;
+    };
     const swap = (o) => {
-      if (Array.isArray(o)) { o.forEach((v, i) => { if (typeof v === 'string' && picked[v] && picked[v].dataUrl) o[i] = picked[v].dataUrl; else swap(v); }); }
-      else if (o && typeof o === 'object') { Object.keys(o).forEach((k) => { const v = o[k]; if (typeof v === 'string' && picked[v] && picked[v].dataUrl) o[k] = picked[v].dataUrl; else swap(v); }); }
+      if (Array.isArray(o)) { o.forEach((v, i) => { if (typeof v === 'string' && previewPath(v)) o[i] = previewPath(v); else swap(v); }); }
+      else if (o && typeof o === 'object') { Object.keys(o).forEach((k) => { const v = o[k]; if (typeof v === 'string' && previewPath(v)) o[k] = previewPath(v); else swap(v); }); }
     };
     swap(d); return d;
   }
@@ -182,11 +186,15 @@
     pick.addEventListener('click', () => file.click());
     file.addEventListener('change', () => {
       const fl = file.files && file.files[0]; if (!fl) return;
-      const path = 'assets/' + f.dir + '/' + safeName(fl.name);
-      picked[path] = { file: fl, dataUrl: null };
+      const fileName = safeName(fl.name), dot = fileName.lastIndexOf('.');
+      const stem = dot > 0 ? fileName.slice(0, dot) : fileName, suffix = dot > 0 ? fileName.slice(dot) : '';
+      let path = 'assets/' + f.dir + '/' + fileName, collision = 2;
+      while (picked[path]) path = 'assets/' + f.dir + '/' + stem + '-' + collision++ + suffix;
+      picked[path] = { file: fl, dataUrl: null, previewUrl: URL.createObjectURL(fl) };
       inp.value = path; obj[f.k] = path;
       note.textContent = 'Picked "' + fl.name + '". It will be inside the ZIP at ' + path + ' (or copy it there yourself).';
       if (/^image\//.test(fl.type)) { const rd = new FileReader(); rd.onload = () => { picked[path].dataUrl = rd.result; thumb(); sendPreview(); }; rd.readAsDataURL(fl); }
+      else sendPreview();
       thumb(); onChange();
     });
     line.append(th, inp, pick, file);
@@ -300,7 +308,7 @@
       hp.appendChild(el('summary', null, 'How this editor works'));
       const ol = el('ol');
       ['Edit anything on the left. The preview on the right updates instantly. Your draft is saved automatically in this browser.',
-       'Pick images / PDFs with "Choose file...". Then press "Update pack (ZIP)": it contains data.js and your files in the right folders.',
+       'Pick images / PDFs with "Choose file...". Then press "Update pack (ZIP)": it contains the whole website, your new data.js, and your picked files in the right folders.',
        'Unzip the pack over your website folder (replace files) and upload/push it. That is all.'].forEach((t) => ol.appendChild(el('li', null, t)));
       hp.appendChild(ol); form.appendChild(hp);
     }
@@ -353,20 +361,68 @@
     return out;
   }
   async function buildZip() {
-    const files = [{ name: 'data.js', data: new TextEncoder().encode(serialize()) }];
+    const files = new Map([['data.js', new TextEncoder().encode(serialize())]]);
+    const siteFiles = [
+      '.nojekyll', 'index.html', 'editor.html', 'SETUP.md', 'favicon.svg',
+      'assets/README.md', 'assets/style.css', 'assets/app.js', 'assets/icons.js', 'assets/editor.js',
+      'assets/certs/README.txt', 'assets/companies/README.txt', 'assets/gallery/README.txt', 'assets/photo/README.txt',
+      'assets/cv/sample-backend-cv.pdf', 'assets/cv/sample-devops-cv.pdf', 'assets/cv/sample-sysadmin-cv.pdf',
+      'assets/projects/apt-repo.svg', 'assets/projects/profile.svg', 'assets/projects/zeyad-monitor.svg',
+      'assets/samples/cert-cloud.svg', 'assets/samples/cert-devops.svg', 'assets/samples/cert-linux.svg',
+      'assets/samples/photo-1.svg', 'assets/samples/photo-2.svg', 'assets/samples/photo-3.svg', 'assets/samples/photo-4.svg',
+      'assets/samples/project-api.svg', 'assets/samples/project-cloud.svg', 'assets/samples/project-web.svg'
+    ];
+    const assetPaths = new Set(siteFiles);
+    const localAssetPath = (value) => {
+      try {
+        const path = decodeURIComponent(value.split(/[?#]/)[0]);
+        return path.startsWith('assets/') && path.split('/').every((part) => part && part !== '.' && part !== '..') && !/[\\\s"'<>]/.test(path) ? path : null;
+      } catch (e) { return null; }
+    };
+    const findAssetPaths = (value) => {
+      if (Array.isArray(value)) value.forEach(findAssetPaths);
+      else if (value && typeof value === 'object') Object.values(value).forEach(findAssetPaths);
+      else if (typeof value === 'string' && /^assets\//i.test(value)) { const path = localAssetPath(value); if (path) assetPaths.add(path); }
+    };
+    findAssetPaths(data);
     const used = JSON.stringify(data);
+    for (const path of assetPaths) {
+      if (picked[path] && used.indexOf('"' + path + '"') >= 0) continue;
+      const response = await fetch(path, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Could not include ' + path + ' (HTTP ' + response.status + ')');
+      files.set(path, new Uint8Array(await response.arrayBuffer()));
+    }
     for (const path of Object.keys(picked)) {
       if (used.indexOf('"' + path + '"') < 0) continue;   // picked earlier but no longer used
-      files.push({ name: path, data: new Uint8Array(await picked[path].file.arrayBuffer()) });
+      files.set(path, new Uint8Array(await picked[path].file.arrayBuffer()));
     }
-    return zipStore(files);
+    // Make every exported package reload its matching profile data even when
+    // it replaces a previously deployed site with cached JavaScript assets.
+    const cacheVersion = Date.now();
+    for (const path of ['index.html', 'editor.html']) {
+      const bytes = files.get(path);
+      if (!bytes) continue;
+      const html = new TextDecoder().decode(bytes)
+        .replace(/src="(data\.js|assets\/(?:app|editor|icons)\.js)(?:\?[^\"]*)?"/g, (_match, path) => `src="${path}?v=${cacheVersion}"`)
+        .replace(/href="assets\/style\.css(?:\?[^\"]*)?"/g, `href="assets/style.css?v=${cacheVersion}"`);
+      files.set(path, new TextEncoder().encode(html));
+    }
+    return zipStore(Array.from(files, ([name, data]) => ({ name, data })));
   }
   function download(name, blob) {
     const a = el('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
   $('#btnJs').addEventListener('click', () => download('data.js', new Blob([serialize()], { type: 'text/javascript' })));
-  $('#btnZip').addEventListener('click', async () => download('portfolio-update.zip', new Blob([await buildZip()], { type: 'application/zip' })));
+  $('#btnZip').addEventListener('click', async () => {
+    const button = $('#btnZip');
+    if (button.disabled) return;
+    button.disabled = true;
+    $('#saved').textContent = 'Preparing full website pack…';
+    try { download('portfolio-update.zip', new Blob([await buildZip()], { type: 'application/zip' })); $('#saved').textContent = 'Full website pack downloaded. Unzip it over the website folder.'; }
+    catch (e) { $('#saved').textContent = 'Pack could not be built: ' + e.message + '. Open the editor from the website address and try again.'; }
+    finally { button.disabled = false; }
+  });
   $('#btnCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(serialize()); $('#saved').textContent = 'data.js copied to the clipboard'; } catch (e) { $('#saved').textContent = 'Copy failed: use the Download button'; } });
   $('#btnSamples').addEventListener('click', () => {
     let n = 0;
